@@ -16,10 +16,10 @@ public:
     }
 
     void initialize() {
-        srand(time(0));
+        srand(time(0)); // Инициализация генератора случайных чисел
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                grid[i][j] = rand() % 2;
+                grid[i][j] = rand() % 2; // Начальное заполнение случайными значениями 0 или 1
             }
         }
     }
@@ -28,11 +28,8 @@ public:
         clear();
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                move(i, j * 2); // Учет двух позиций для отображения
-                if (grid[i][j] == 1)
-                    addch('*');
-                else
-                    addch('.');
+                move(i, j); // Перемещаем курсор на позицию клетки
+                addch(grid[i][j] ? '*' : ' '); // Отображаем клетку
             }
         }
         refresh();
@@ -57,10 +54,10 @@ private:
         int count = 0;
         for (int i = -1; i <= 1; ++i) {
             for (int j = -1; j <= 1; ++j) {
-                int nx = x + i;
-                int ny = y + j;
-                if (nx >= 0 && nx < height && ny >= 0 && ny < width)
-                    count += grid[nx][ny];
+                if ((i == 0 && j == 0) || x+i < 0 || y+j < 0 || x+i >= height || y+j >= width) {
+                    continue; // Пропускаем себя и клетки за пределами поля
+                }
+                count += grid[x+i][y+j];
             }
         }
         return count;
@@ -71,34 +68,29 @@ int main() {
     initscr(); // Инициализация ncurses
     cbreak();
     noecho();
-    keypad(stdscr, TRUE);
     curs_set(0); // Скрыть курсор
 
-    GameOfLife game(20, 40);
+    int height = 20, width = 40;
+    GameOfLife game(height, width);
     game.initialize();
     game.display();
 
-    int ch;
+    nodelay(stdscr, TRUE); // Неблокирующий ввод
+    scrollok(stdscr, TRUE); // Разрешить прокрутку
+    keypad(stdscr, TRUE); // Разрешить специальные клавиши
+
     bool running = true;
     while (running) {
-        ch = getch();
-        switch (ch) {
-            case 'q':  // Выход
-                running = false;
-                break;
-            case KEY_UP:
-            case KEY_DOWN:
-            case KEY_LEFT:
-            case KEY_RIGHT:
-                // Логика перемещения курсора или других действий
-                break;
-            default:
-                game.update();
-                game.display();
-                break;
+        int ch = getch();
+        if (ch == 'q' || ch == 'Q') { // Выход по 'q' или 'Q'
+            running = false;
+        } else {
+            game.update();
+            game.display();
         }
+        napms(200); // Пауза между обновлениями состояния
     }
 
-    endwin(); // Закрытие ncurses
+    endwin(); // Выход из режима ncurses
     return 0;
 }
